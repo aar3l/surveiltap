@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+
+<html lang="pt-br">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <title>Teste de Deck</title>
+
+  <style>
+
+    body {
+
+      font-family: Arial, sans-serif;
+
+      margin: 0;
+
+      background-color: #1e002e;
+
+      color: white;
+
+      text-align: center;
+
+    }
+
+    header {
+
+      background-color: #5B3774;
+
+      padding: 10px;
+
+    }
+
+    button {
+
+      background-color: #8a5bbf;
+
+      color: white;
+
+      border: none;
+
+      padding: 10px 15px;
+
+      margin: 5px;
+
+      border-radius: 6px;
+
+      cursor: pointer;
+
+    }
+
+    button:hover { background-color: #9c6cd4; }
+
+    #batalha {
+
+      width: 100%;
+
+      height: 500px;
+
+      border: 1px solid #6a0dad;
+
+      position: relative;
+
+      overflow: hidden;
+
+    }
+
+    #mao {
+
+      margin-top: 10px;
+
+      padding: 10px;
+
+      border: 2px solid white;
+
+      display: flex;
+
+      justify-content: center;
+
+      gap: 10px;
+
+      flex-wrap: wrap;
+
+      background: rgba(255,255,255,0.05);
+
+    }
+
+    .carta {
+
+      width: 120px;
+
+      cursor: grab;
+
+      position: relative;
+
+      transition: transform 0.2s;
+
+    }
+
+    .movendo {
+
+      position: absolute !important;
+
+      z-index: 999;
+
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+<header>
+
+  <h2>Teste de Deck</h2>
+
+  <input type="file" id="deckFile" />
+
+  <button onclick="embaralhar()">Embaralhar</button>
+
+  <button onclick="maoInicial()">Mão inicial (7)</button>
+
+  <button onclick="comprarCarta()">Comprar carta</button>
+
+  <button onclick="mulligan()">Mulligan</button>
+
+  <button onclick="resetarCampo()">Resetar campo</button>
+
+</header>
+
+<div id="batalha"></div>
+
+<div id="mao"></div>
+
+<script>
+
+let deck = [];
+
+let baralho = [];
+
+document.getElementById("deckFile").addEventListener("change", carregarDeck);
+
+async function carregarDeck(event) {
+
+  const file = event.target.files[0];
+
+  if (!file) return;
+
+  const text = await file.text();
+
+  const linhas = text.split("\n").map(l => l.trim()).filter(l => l);
+
+  deck = [];
+
+  for (const linha of linhas) {
+
+    const partes = linha.split(" ");
+
+    const qtd = parseInt(partes[0]);
+
+    const nomeCarta = partes.slice(1).join(" ");
+
+    for (let i = 0; i < qtd; i++) {
+
+      deck.push(nomeCarta);
+
+    }
+
+  }
+
+  embaralhar();
+
+}
+
+function embaralhar() {
+
+  baralho = [...deck];
+
+  for (let i = baralho.length - 1; i > 0; i--) {
+
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [baralho[i], baralho[j]] = [baralho[j], baralho[i]];
+
+  }
+
+  document.getElementById("mao").innerHTML = "";
+
+  document.getElementById("batalha").innerHTML = "";
+
+}
+
+async function buscarImagem(nome) {
+
+  const resposta = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(nome)}`);
+
+  const dados = await resposta.json();
+
+  return dados.image_uris ? dados.image_uris.normal : dados.card_faces[0].image_uris.normal;
+
+}
+
+async function adicionarCartaNaMao(nome) {
+
+  const url = await buscarImagem(nome);
+
+  const img = document.createElement("img");
+
+  img.src = url;
+
+  img.className = "carta";
+
+  img.addEventListener("dblclick", () => moverParaCampo(img));
+
+  adicionarHoverPopUp(img, nome);
+
+  document.getElementById("mao").appendChild(img);
+
+}
+
+function maoInicial() {
+
+  document.getElementById("mao").innerHTML = "";
+
+  for (let i = 0; i < 7; i++) {
+
+    if (baralho.length === 0) break;
+
+    adicionarCartaNaMao(baralho.pop());
+
+  }
+
+}
+
+function comprarCarta() {
+
+  if (baralho.length === 0) return;
+
+  adicionarCartaNaMao(baralho.pop());
+
+}
+
+function mulligan() {
+
+  document.getElementById("mao").innerHTML = "";
+
+  maoInicial();
+
+}
+
+function resetarCampo() {
+
+  document.getElementById("batalha").innerHTML = "";
+
+  document.getElementById("mao").innerHTML = "";
+
+}
+
+function moverParaCampo(img) {
+
+  const mao = document.getElementById("mao");
+
+  if (mao.contains(img)) {
+
+    mao.removeChild(img);
+
+    const batalha = document.getElementById("batalha");
+
+    batalha.appendChild(img);
+
+    img.style.position = "absolute";
+
+    img.style.left = "50px";
+
+    img.style.top = "50px";
+
+    tornarArrastavel(img);
+
+  }
+
+}
+
+function tornarArrastavel(el) {
+
+  let offsetX, offsetY;
+
+  let movendo = false;
+
+  // ARRASTAR
+
+  el.addEventListener("mousedown", (e) => {
+
+    movendo = true;
+
+    el.classList.add("movendo");
+
+    offsetX = e.offsetX;
+
+    offsetY = e.offsetY;
+
+    function mover(e) {
+
+      if (!movendo) return;
+
+      el.style.left = e.clientX - offsetX + "px";
+
+      el.style.top = e.clientY - offsetY + "px";
+
+    }
+
+    document.addEventListener("mousemove", mover);
+
+    document.addEventListener("mouseup", () => {
+
+      movendo = false;
+
+      el.classList.remove("movendo");
+
+      document.removeEventListener("mousemove", mover);
+
+    }, { once: true });
+
+  });
+
+  el.ondragstart = () => false;
+
+  // TAP MAGIC
+
+  el.addEventListener("contextmenu", (e) => {
+
+    e.preventDefault(); 
+
+    const tapada = el.dataset.tapada === "true"; 
+
+    if (tapada) {
+
+      el.style.transform = `rotate(0deg)`; 
+
+      el.dataset.tapada = "false";
+
+    } else {
+
+      el.style.transform = `rotate(90deg)`; 
+
+      el.dataset.tapada = "true";
+
+    }
+
+  });
+
+}
+
+// HOVER POP-UP
+
+function adicionarHoverPopUp(img, nome) {
+
+  let timeoutId;
+
+  let popup;
+
+  img.addEventListener("mouseover", async () => {
+
+    timeoutId = setTimeout(async () => {
+
+      const url = await buscarImagem(nome);
+
+      popup = document.createElement("img");
+
+      popup.src = url;
+
+      popup.style.position = "fixed";
+
+      popup.style.width = "300px";
+
+      popup.style.height = "auto";
+
+      popup.style.top = "50%";
+
+      popup.style.left = "50%";
+
+      popup.style.transform = "translate(-50%, -50%)";
+
+      popup.style.border = "3px solid white";
+
+      popup.style.borderRadius = "8px";
+
+      popup.style.zIndex = 1000;
+
+      popup.style.background = "#1e002e";
+
+      popup.style.padding = "5px";
+
+      document.body.appendChild(popup);
+
+    }, 1500); // 1,5s
+
+  });
+
+  img.addEventListener("mouseout", () => {
+
+    clearTimeout(timeoutId);
+
+    if (popup) {
+
+      document.body.removeChild(popup);
+
+      popup = null;
+
+    }
+
+  });
+
+}
+
+</script>
+
+</body>
+
+</html>

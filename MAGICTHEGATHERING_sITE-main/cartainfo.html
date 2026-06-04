@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Consulta de Carta / Tradutor Local</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #251232; color: #fff; margin: 0; padding: 20px; display: flex; flex-direction: column; align-items: center; }
+        
+        .page-container { display: flex; flex-direction: column; gap: 20px; max-width: 900px; width: 100%; align-items: center; }
+        .content-container { display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 20px; }
+        .card-details-box, .card-effect-box { padding: 20px; border-radius: 10px; box-sizing: border-box; }
+        
+        .card-details-box { background: #3f2651; width: 420px; border: 6px solid #cfcfcf; }
+        .card-details-box h2 { margin: 0 0 12px 0; font-size: 24px; color: #f2eaf8; text-align: center; }
+        .card-details-box p { margin: 0 0 8px 0; font-size: 14px; }
+        
+        img.cardimg { max-width: 100%; border-radius: 6px; display: block; margin: 0 auto; border: 4px solid #cfcfcf; }
+        
+        .card-effect-box { background: #3f2651; width: 420px; border: 6px solid #cfcfcf; }
+        .card-effect-box h2 { margin: 0 0 12px 0; font-size: 20px; color: #f2eaf8; text-align: center; }
+        .card-effect-box .effect-text { white-space: pre-wrap; background: rgba(0,0,0,0.12); padding: 8px; border-radius: 6px; color: #fff; line-height: 1.4; }
+        
+        .button-group { display: flex; gap: 8px; justify-content: center; margin-top: 15px; }
+        button { padding: 10px 15px; border-radius: 8px; border: none; font-weight: bold; cursor: pointer; transition: background-color 0.3s; }
+        #translateButton { background: #8a69a1; color: white; }
+        #translateButton:hover { background: #6f5187; }
+        #openScryfallBtn { background: #6b9ad6; color: white; }
+        #openScryfallBtn:hover { background: #527eb3; }
+        button[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+        .alt-prints-container { display: flex; gap: 10px; overflow-x: auto; margin-top: 20px; padding: 10px; max-width: 90vw; background: rgba(0,0,0,0.2); border-radius: 8px; }
+        .alt-thumb { width: 80px; height: auto; cursor: pointer; border: 2px solid transparent; border-radius: 4px; flex-shrink: 0; transition: border-color 0.3s; }
+        .alt-thumb:hover { border-color: #fff; }
+        
+        .error { color: #ffb4b4; margin-top: 8px; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="page-container">
+        <div class="content-container">
+            <div class="card-details-box">
+                <h2 id="cardName">The Eleventh Doctor</h2>
+                <p><strong>Artista:</strong> <span id="cardArtist">Justyna Dura</span></p>
+                <p><strong>Set:</strong> <span id="cardSet">Doctor Who</span></p>
+                <p><strong>Cores:</strong> <span id="cardColors">UW</span></p>
+                <img id="cardImage" class="cardimg" src="https://cards.scryfall.io/large/front/d/e/de5d883b-f6a7-4b13-a75d-f15594191632.jpg?1696636706" alt="Card Image" />
+            </div>
+
+            <div class="card-effect-box">
+                <h2>Efeito:</h2>
+                <pre id="cardEffect" class="effect-text">I, AM, TALKING! — Whenever The Eleventh Doctor deals combat damage to a player, you may exile a card from your hand with a number of time counters on it equal to its mana value. If it doesn't have suspend, it gains suspend.
+(2): Target creature with power 3 or less can't be blocked this turn.</pre>
+                <div class="button-group">
+                    <button id="translateButton" disabled>Traduzir localmente</button>
+                    <button id="openScryfallBtn">Abrir no Scryfall</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="altPrints" class="alt-prints-container">
+            </div>
+
+        <div class="error" id="msg"></div>
+    </div>
+    
+    <script>
+
+        function localTranslateOracle(text) {
+          if (!text) return text;
+          const manaMap = [];
+          text = text.replace(/\{[^}]+\}/g, m => {
+            const key = `__MANA_${manaMap.length}__`;
+            manaMap.push({key, val: m});
+            return key;
+          });
+    
+          const phraseMap = [
+      ["at the beginning of", "No início de"],
+      ["until end of turn", "até o final do turno"],
+      ["draw a card", "Compre um card"],
+      ["draw two cards", "Compre dois cards"],
+      ["you may", "você pode"],
+      ["discard a card", "Descarte um card"],
+      ["sacrifice", "sacrifique"],
+      ["counter target spell", "anule a mágica-alvo"],
+      ["destroy target", "destrua o alvo"],
+      ["put into your graveyard", "coloque em seu cemitério"],
+      ["create a token", "crie uma ficha"],
+      ["create", "crie"],
+      ["tokens", "fichas"],
+      ["search your library", "procure em seu grimório"],
+      ["shuffle", "embaralhe"],
+      ["return to your hand", "retorne para sua mão"],
+      ["once during your turns", "uma vez durante seu turno"],
+      ["enters", "entra"],
+      ["play", "jogar"],
+      ["historic", "histórica"],
+      ["land", "terreno"],
+      ["battlefield", "campo de batalha"],
+      ["Timey-Wimey", "Barato Muito Louco"],
+      ["Time travel", "Viajar o tempo"],
+      ["Time counters", "Marcadores de tempo"],
+      ["Suspend", "Suspender"],
+      ["Cascade", "Cascata"],
+      ["Planeswalk", "Caminhar entre planos"],
+      ["Crew", "Tripular"],
+      ["Artifact — Vehicle", "Artefato — Veículo"],
+      ["Legendary Creature — Time Lord", "Criatura lendária — Senhor do Tempo"],
+      ["Whenever", "Sempre que"],
+      ["Exile", "Exilar"],
+      ["Return to the battlefield", "Retorne ao campo de batalha"],
+      ["Enter the battlefield", "Entrar no campo de batalha"],
+      ["Destroy target", "Destrua o alvo"],
+      ["Return to your hand", "Retorne para sua mão"],
+      ["Create a token", "Crie uma ficha"],
+      ["Put a time counter on", "Coloque um marcador de tempo em"],
+      ["Remove a time counter from", "Remova um marcador de tempo de"],
+      ["Activate only as a sorcery", "Ative apenas como uma mágica de feitiço"],
+      ["Tap any number of creatures you control with total power", "Vire qualquer número de criaturas que você controla com poder total"],
+      ["This Vehicle becomes an artifact creature until end of turn", "Este Veículo se torna uma criatura artefato até o final do turno"],
+      ["lifelink", "Vínculo com a vida"],
+      ["deathtouch", "Toque mortífero"],
+      ["first strike", "Iniciativa"],
+      ["double strike", "Golpe duplo"],
+      ["hexproof", "Resistência à magia"],
+      ["trample", "Atropelar"],
+      ["vigilance", "Vigilância"],
+      ["menace", "Ameaça"],
+      ["flying", "Voar"],
+      ["haste", "Ímpeto"],
+      ["indestructible", "Indestrutível"],
+      ["reach", "Alcance"],
+      ["equip", "Equipar"],
+      ["enchant", "Encantar"],
+      ["aura", "Aura"],
+      ["planeswalker", "Caminhante de planos"],
+      ["loyalty", "Lealdade"],
+      ["mana", "Mana"],
+      ["tap", "Virar"],
+      ["untap", "Endireitar"],
+      ["scry", "Olhar"],
+      ["gain life", "Ganhe vida"],
+      ["lose life", "Perca vida"],
+      ["mill", "Descartar do topo do grimório"],
+      ["token creature", "Criatura ficha"],
+      ["return target", "Retorne o alvo"],
+      ["exile target", "Exile o alvo"],
+      ["damage", "Dano"],
+      ["counter", "Anule"],
+      ["draw", "Compre"],
+      ["discard", "Descarte"],
+      ["creature", "Criatura"],
+      ["sorcery", "Feitiço"],
+      ["instant", "Instantâneo"],
+      ["artifact", "Artefato"],
+      ["enchantment", "Encantamento"],
+      ["planeswalker", "Caminhante de planos"],
+      ["legendary", "Lendário"],
+      ["basic land", "Terreno básico"],
+      ["tap target", "Vire o alvo"],
+      ["destroy all", "Destrua todos"],
+      ["until end of turn", "Até o final do turno"],
+      ["at the beginning of your upkeep", "No início da sua manutenção"],
+      ["may cast", "Pode conjurar"],
+      ["from your graveyard", "Do seu cemitério"],
+      ["put on the battlefield", "Coloque no campo de batalha"],
+      ["choose", "Escolha"],
+      ["it gains", "ganha"],
+      ["number", "número"],
+      ["with", "com"],
+      ["power", "poder"],
+        ["Prowess", "Astúcia"],
+    ["Amass", "Acumular"],
+    ["Delve", "Escavação"],
+    ["Flash", "Lampejo"],
+    ["Adapt", "Adaptar"],
+    ["Partner", "Parceria"],
+    ["Regenerate", "Regenerar"],
+    ["Scry", "Olhar"],
+    ["Mulligan", "Mulligan"],
+    ["Flicker", "Cintilar"],
+    ["Mill", "Moinho"],
+    ["Tutor", "Tutor"],
+    ["Saga", "Saga"],
+    ["Tribal", "Tribal"],
+    ["Landfall", "Aterragem"],
+    ["Investigate", "Investigar"],
+    ["Raid", "Incursão"],
+    ["Rally", "Batalhão"],
+    ["Draft", "Draft"],
+    ["Commander", "Comandante"],
+    ["Exalted", "Exaltado"],
+    ["Flying", "Voar"],
+    ["Haste", "Ímpeto"],
+    ["Trample", "Atropelar"],
+    ["Lifelink", "Vínculo com a vida"],
+    ["Deathtouch", "Toque mortífero"],
+    ["Hexproof", "Resistência à magia"],
+    ["First strike", "Iniciativa"],
+    ["Double strike", "Golpe duplo"],
+    ["Vigilance", "Vigilância"],
+    ["Reach", "Alcance"],
+    ["Indestructible", "Indestrutível"],
+    ["Enchant", "Encantar"],
+    ["Equip", "Equipar"],
+    ["Whenever", "Sempre que"],
+    ["When", "Quando"],
+    ["Activated ability", "Habilidade ativada"],
+    ["Enchant Creature", "Encantar Criatura"],
+    ["Enchanted Creature", "Criatura Encantada"],
+    ["can't", "não pode"],
+    ["activated abilities", "habilidades ativadas"],
+    ["Prowess", "Astúcia"],
+    ["Amass", "Acumular"],
+    ["Delve", "Escavação"],
+    ["Flash", "Lampejo"],
+    ["Adapt", "Adaptar"],
+    ["Partner", "Parceria"],
+    ["Regenerate", "Regenerar"],
+    ["Scry", "Olhar"],
+    ["Mulligan", "Mulligan"],
+    ["Flicker", "Cintilar"],
+    ["Mill", "Moinho"],
+    ["Tutor", "Tutor"],
+    ["Saga", "Saga"],
+    ["Tribal", "Tribal"],
+    ["Landfall", "Aterragem"],
+    ["Investigate", "Investigar"],
+    ["Raid", "Incursão"],
+    ["Rally", "Batalhão"],
+    ["Draft", "Draft"],
+    ["Commander", "Comandante"],
+    ["Exalted", "Exaltado"],
+    ["gets", "recebe"],
+    ["Whenever", "sempre que",],
+    ["You may put", "Você pode colocar"],
+    ["nonartifact","não-artefato"],
+    ["noncreature", "não-criatura"],
+    ["anywhere", "qualquer lugar"],
+    ["revel it", "revele-o(a)"],
+    ["and/or", "e/ou"],
+    ["graveyard", "cemitério"],
+    ["this way", "desta forma"],
+    ["target", "alvo"],
+    ["attacks", "ataca"],
+    ["for", "por"],
+    ["its", "seu"],
+    ["becomes", "torna-se"],
+    ["untapped", "desvirado"],
+    ["tap", "vire"],
+    ["step", "etapa"],
+    ["upkeep", "fase de apoio"],
+    ["each","cada"],
+    ["draw", "compre/comprar"],
+    ["may", "pode"],
+    ["library", "baralho"],
+    ["look", "olhar"],
+    ["top", "topo"],
+    ["of", "de"],
+    ["your", "sua"],
+    ["one or more", "uma ou mais"],
+    ["if", "se"],
+    ["deals", "causa"],
+    ["put in", "colocados(as)"],
+    ["equal","igual"],
+    ["spell", "mágica"],
+    ["you", "você"],
+    ["copy it", "copie-a"],
+    ["triggers", "ativa"],
+    ["ability", "habilidade"],
+    ["hand", "mão"],
+    ["copy", "copia"],
+    ["nonland", "não-terreno"],
+    ["attack", "ataca"]
+
+
+          ];
+    
+          const keywordMap = {
+     "Flying": "Voar",
+      "Haste": "Ímpeto",
+      "Trample": "Atropelar",
+      "Lifelink": "Vínculo com a vida",
+      "Deathtouch": "Toque mortífero",
+      "Hexproof": "Resistência à magia",
+      "First strike": "Iniciativa",
+      "Double strike": "Golpe duplo",
+      "Vigilance": "Vigilância",
+      "Reach": "Alcance",
+      "Indestructible": "Indestrutível",
+      "Enchant": "Encantar",
+      "Equip": "Equipar",
+      "Whenever": "Sempre que",
+      "When": "Quando",
+      "Goad": "Atiçar",
+      "Activated ability": "Habilidade ativada"
+          };
+    
+          let replacements = phraseMap.concat(Object.entries(keywordMap));
+          replacements.sort((a,b) => b[0].length - a[0].length);
+    
+          for (const [en, pt] of replacements) {
+            const esc = en.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp('\\b' + esc + '\\b', 'gi');
+            text = text.replace(re, match => match[0]===match[0].toUpperCase()? pt.charAt(0).toUpperCase()+pt.slice(1) : pt);
+          }
+    
+          text = text.replace(/\btarget (creature|player|permanent|artifact|enchantment|land|opponent|token)\b/gi,
+            (m,p1) => ({creature:"criatura", player:"jogador", permanent:"permanente", artifact:"artefato", enchantment:"encantamento", land:"terra", opponent:"oponente", token:"ficha"}[p1.toLowerCase()]+" alvo")
+          );
+    
+          manaMap.forEach(item => { text = text.replace(item.key, item.val); });
+          return text;
+        }
+    
+        const $ = id => document.getElementById(id);
+        const msg = $('msg');
+    
+        function setMessage(m, isError=true){ msg.textContent=m||''; msg.style.color=isError?'#ffb4b4':'#bfe7b8'; }
+    
+        async function fetchCardById(id) {
+          setMessage('Carregando carta por id...', false);
+          try {
+            const res = await fetch(`https://api.scryfall.com/cards/${encodeURIComponent(id)}`);
+            if(!res.ok) throw new Error('Carta não encontrada (id).');
+            const card = await res.json();
+            updateCard(card);
+            setMessage('', false);
+          } catch(e){ console.error(e); setMessage(e.message||'Erro ao buscar por id.'); }
+        }
+    
+        async function fetchCardByName(name) {
+          setMessage('Buscando carta por nome...', false);
+          try {
+            const res = await fetch(`https://api.scryfall.com/cards/named?fuzzy=${encodeURIComponent(name)}`);
+            if(!res.ok) throw new Error('Carta não encontrada (nome).');
+            const card = await res.json();
+            updateCard(card);
+            setMessage('', false);
+          } catch(e){ console.error(e); setMessage(e.message||'Erro ao buscar por nome.'); }
+        }
+    
+        function updateCard(card){
+          $('cardName').textContent = card.name || (card.card_faces?.map(f=>f.name).join(' // ')) || 'Nome desconhecido';
+          $('cardArtist').textContent = card.artist || (card.card_faces?.map(f=>f.artist).join(' // ')) || '—';
+          $('cardSet').textContent = card.set_name || '—';
+          const colors = card.colors?.join('') || (card.card_faces?.flatMap(f=>f.colors||[]).join('')) || '—';
+          $('cardColors').textContent = colors;
+    
+          const img = card.image_uris?.normal || card.card_faces?.[0]?.image_uris?.normal || '';
+          $('cardImage').src = img;
+          $('cardImage').alt = img? `${card.name} image` : 'Sem imagem';
+    
+          const effect = card.oracle_text || card.card_faces?.map(f=>f.oracle_text||'').join('\n---\n') || '';
+          $('cardEffect').textContent = effect || 'Sem efeito disponível.';
+          $('cardEffect').dataset.originalText = effect || '';
+          $('translateButton').disabled = !effect;
+          $('translateButton').dataset.state='original';
+          $('translateButton').textContent='Traduzir localmente';
+          $('openScryfallBtn').dataset.scryfall = card.scryfall_uri || '';
+    
+          const altContainer = $('altPrints');
+          altContainer.innerHTML = '';
+          if(card.prints_search_uri){
+            fetch(card.prints_search_uri)
+            .then(r=>r.json())
+            .then(data=>{
+              const cards = data.data || [];
+              cards.forEach(c=>{
+                const thumb = c.image_uris?.small || c.card_faces?.[0]?.image_uris?.small;
+                if(thumb){
+                  const imgEl = document.createElement('img');
+                  imgEl.src = thumb;
+                  imgEl.className = 'alt-thumb';
+                  imgEl.title = `${c.name} (${c.set_name})`;
+                  imgEl.addEventListener('click', ()=>{
+                    $('cardImage').src = c.image_uris?.normal || c.card_faces?.[0]?.image_uris?.normal;
+                    $('cardImage').alt = c.name;
+                    $('cardSet').textContent = c.set_name;
+                    const effectText = c.oracle_text || c.card_faces?.map(f=>f.oracle_text||'').join('\n---\n') || '';
+                    $('cardEffect').textContent = effectText || 'Sem efeito disponível.';
+                    $('cardEffect').dataset.originalText = effectText || '';
+                    $('translateButton').disabled = !effectText;
+                    $('translateButton').dataset.state='original';
+                    $('translateButton').textContent='Traduzir localmente';
+                  });
+                  altContainer.appendChild(imgEl);
+                }
+              });
+            }).catch(err=>{
+              console.warn('Erro ao buscar prints alternativos', err);
+            });
+          }
+        }
+    
+        $('translateButton').addEventListener('click', ()=>{
+          const el=$('cardEffect');
+          const state=$('translateButton').dataset.state||'original';
+          if(state==='translated'){
+            el.textContent=el.dataset.originalText||'—';
+            $('translateButton').dataset.state='original';
+            $('translateButton').textContent='Traduzir localmente';
+          } else {
+            el.textContent=localTranslateOracle(el.dataset.originalText)||'—';
+            $('translateButton').dataset.state='translated';
+            $('translateButton').textContent='Ver original';
+          }
+        });
+    
+        $('openScryfallBtn').addEventListener('click', ()=>{
+          const s = $('openScryfallBtn').dataset.scryfall;
+          if(!s) return setMessage('Nenhuma URL do Scryfall disponível.');
+          window.open(s,'_blank');
+        });
+    
+        (function(){
+          const params = new URLSearchParams(location.search);
+          const id = params.get('id');
+          const name = params.get('name');
+          if(id) fetchCardById(id);
+          else if(name) fetchCardByName(name);
+          else {
+              setMessage('Nenhum ID ou nome na URL. Adicione ?id=<id> ou ?name=<nome>.', true);
+              fetchCardByName('  ');
+          }
+        })();
+    </script>
+</body>
+</html>

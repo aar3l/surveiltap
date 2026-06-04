@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TESTE</title>
+  <style>
+    .header {
+      background-color: #5B3774;
+      width: 100%;
+      height: 80px;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding-left: 20px;
+    }
+
+    .header-logo {
+      max-height: 50px;
+      margin-right: 20px;
+    }
+
+    .header-button {
+      width: 100;
+      height: 75;
+      background-color: transparent;
+      border: none;
+      margin: 0 5px;
+      cursor: pointer;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+
+    .header-button.search {
+      background-image: url('cartasbotao.png');
+    }
+
+    .header-button.decks {
+      background-image: url('decksbotao.png');
+    }
+
+
+    .header-button.deck-builder {
+      background-image: url("deckbuilder.png");
+      width: 200px;
+      height: 30px;
+    }
+
+
+    .header-button.articles {
+      background-image: url('artigos.png');
+    }
+
+    .centered-content {
+      margin-top: 100px;
+      text-align: center;
+    }
+
+    .rectangle {
+      background-color: #5B3774;
+      width: 100%;
+      height: 50px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: Arial;
+    }
+
+    body {
+      background-color: #251232;
+      margin: 0;
+    }
+  </style>
+
+
+  <style>
+    /* Aqui fica o estilo do código */
+    body {
+      font-family: Arial, sans-serif;
+    }
+
+    #name {
+      width: 400px;
+      height: 30px;
+    }
+
+
+
+
+    #results {
+      margin-top: 20px;
+    }
+
+    .color-btn {
+      margin: 0 5px;
+      width: 50px;
+      height: 50px;
+      border: none;
+      background-repeat: no-repeat;
+      background-size: contain;
+      background-color: #251232;
+      cursor: pointer;
+
+
+    }
+
+    .color-btn.clicked {
+      filter: brightness(30%);
+    }
+
+    .header-button {
+      width: 125px;
+      height: 30px;
+      background-color: transparent;
+      background-size: cover;
+      border: none;
+      margin: 0 5px;
+      cursor: pointer;
+    }
+  </style>
+
+<body>
+  <div class="header">
+    <a href="index.html">
+      <img class="header-logo" src="logo2.png" alt="SurveilTAP Logo">
+    </a>
+    <a href="paginaprocura.html"><button class="header-button search"></button></a>
+    <a href="paginadecks.html"><button class="header-button decks"></button></a>
+    <a href="paginamontedeck.html"><button class="header-button deck-builder"> </button></a>
+    <a href="artg.html" class="header-button">
+      <img src="artigos.png" alt="" class="header-button articles">
+    </a>
+  </div>
+
+  <div class="centered-content">
+    <div class="search-buttons">
+    </div>
+
+
+
+
+</body>
+
+</head>
